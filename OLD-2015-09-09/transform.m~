@@ -1,0 +1,18 @@
+function [= transform()
+% Modify index
+idx3drridxmasked = idx3drr - rrmin + 1;
+idx3dccidxmasked = idx3dcc - ccmin + 1;
+idx3dzzidxmasked = idx3dzz - zzmin + 1;
+
+idx1didxmasked = sub2ind(idxmaskedsz, idx3drridxmasked, idx3dccidxmasked, idx3dzzidxmasked);
+
+
+tensorvol = zeros(length(rridx), length(ccidx), length(zzidx), 6);
+parfor jj = 1 : size(tensor, 2)
+    tensor1d = zeros(idxmaskedszrr * idxmaskedszrr * idxmaskedszrr, 1);
+    tensor1d(idx1didxmasked) = tensor(:, jj);
+    tensor3d = reshape(tensor1d, idxmaskedsz);
+    tensorvol(:, :, :, jj) = tensor3d;
+end
+    
+end
