@@ -1,4 +1,10 @@
 function k = doggen(sigma, X, Y, Z)
+% Function to generate the derivitive of Gaussian kernels, in 1D, 2D and
+% 3D.
+%
+%
+% (c) Qiyuan Tian, McNab Lab, Stanford University
+% September 2015
 
 halfsize = ceil(3 * max(sigma));
 x = -halfsize : halfsize;
