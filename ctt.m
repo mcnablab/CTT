@@ -121,12 +121,16 @@ updata_log(hObject, handles, ['Angle Threshold selected: ' mat2str(handles.param
 
 function pbout_Callback(hObject, eventdata, handles)
 dpOut = uigetdir;
-set(handles.etin, 'String', dpOut);
+if dpOut == 0, return, end
+set(handles.etout, 'String', dpOut);
+updata_log(hObject, handles, ['Output directory selected: ' dpOut])
 
 
 function pbin_Callback(hObject, eventdata, handles)
 dpIn = uigetdir;
+if dpIn == 0, return, end
 set(handles.etin, 'String', dpIn);
+updata_log(hObject, handles, ['Input directory selected: ' dpIn])
 
 
 function pbtrack_Callback(hObject, eventdata, handles)
