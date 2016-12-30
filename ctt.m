@@ -27,85 +27,10 @@ end
 function ctt_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 guidata(hObject, handles);
-initialize_gui(hObject, handles, false);
-
+initialize_gui(hObject, handles);
 
 function varargout = ctt_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
-
-
-%%%% Object Initialization %%%%
-function initialize_gui(fig_handle, handles, isreset)
-if ~isreset
-    return;
-end
-handles.params.outdir = '';
-handles.params.roidir = '';
-handles.params.dogsigmas = [];
-handles.params.gausigmas = [];
-handles.params.angthresholds = [];
-
-set(handles.etout, 'String', '');
-set(handles.etroi, 'String', '');
-set(handles.etdog, 'String', '');
-set(handles.etgau, 'String', '');
-set(handles.etang, 'String', '');
-
-guidata(handles.figure1, handles);
-
-
-
-%%%% Callback %%%%
-function etout_Callback(hObject, eventdata, handles)
-dpOut = get(hObject, 'String');
-if ~exist(dpOut, 'dir')
-    errordlg('Input must be a number', 'Error');
-end
-
-function etroi_Callback(hObject, eventdata, handles)
-dpRoi = get(hObject, 'String');
-if ~exist(dpRoi, 'dir')
-    errordlg('ROI directory does not exist! Input again!', 'Error');
-end
-
-function etdog_Callback(hObject, eventdata, handles)
-sigstr = get(hObject, 'String');
-sigs = str2num(sigstr);
-if isempty(sigs)
-   errordlg('DoG Sigma must be numbers! Input again!', 'Error'); 
-   return
-end
-handles.params.dogsigmas = sigs;
-
-function etgau_Callback(hObject, eventdata, handles)
-sigstr = get(hObject, 'String');
-sigs = str2num(sigstr);
-if isempty(sigs)
-   errordlg('Gau Sigma must be numbers! Input again!', 'Error'); 
-   return
-end
-handles.params.gausigmas = sigs;
-
-function etang_Callback(hObject, eventdata, handles)
-angstr = get(hObject, 'String');
-angs = str2num(angstr);
-if isempty(angs)
-   errordlg('Angle Threshold must be numbers! Input again!', 'Error'); 
-   return
-end
-handles.params.angthresholds = angs;
-
-function pbout_Callback(hObject, eventdata, handles)
-
-function pbroi_Callback(hObject, eventdata, handles)
-dpRoi = uigetdir;
-set(handles.etroi, 'String', dpRoi);
-
-function pbtrack_Callback(hObject, eventdata, handles)
-
-function pbreset_Callback(hObject, eventdata, handles)
-initialize_gui(gcbf, handles, true);
-
 
 %%%%% Object %%%%%
 function etout_CreateFcn(hObject, eventdata, handles)
@@ -113,7 +38,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function etroi_CreateFcn(hObject, eventdata, handles)
+function etin_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -133,3 +58,110 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+%%%% Callback %%%%
+function etout_Callback(hObject, eventdata, handles)
+dpOut = get(hObject, 'String');
+if ~exist(dpOut, 'dir')
+    response = questdlg([dpOut ' does not exist! Create this directory?'], 'Yes', 'No');
+    if strcmpi(response, 'yes')
+        mkdir(dpOut);
+        warndlg([dpOut ' created!']);
+    else
+        errordlg('Directory does not exist! Enter again!', 'Error');
+        return
+    end
+end
+handles.param.outdir = dpOut;
+updata_log(hObject, handles, ['Output directory selected: ' dpOut])
+
+
+function etin_Callback(hObject, eventdata, handles)
+dpIn = get(hObject, 'String');
+if ~exist(dpIn, 'dir')
+    errordlg('Input directory does not exist! Enter again!', 'Error');
+    return
+end
+handles.param.indir = dpIn;
+updata_log(hObject, handles, ['Input directory selected: ' dpIn])
+
+
+function etdog_Callback(hObject, eventdata, handles)
+sigstr = get(hObject, 'String');
+sigs = str2num(sigstr);
+if isempty(sigs)
+   errordlg('DoG Sigma must be numbers! Input again!', 'Error'); 
+   return
+end
+handles.param.dogsigmas = sigs(:)';
+updata_log(hObject, handles, ['DoG Sigma selected: ' mat2str(handles.param.dogsigmas)]);
+
+
+function etgau_Callback(hObject, eventdata, handles)
+sigstr = get(hObject, 'String');
+sigs = str2num(sigstr);
+if isempty(sigs)
+   errordlg('Gau Sigma must be numbers! Input again!', 'Error'); 
+   return
+end
+handles.param.gausigmas = sigs(:)';
+updata_log(hObject, handles, ['Gau Sigma selected: ' mat2str(handles.param.gausigmas)]);
+
+
+function etang_Callback(hObject, eventdata, handles)
+angstr = get(hObject, 'String');
+angs = str2num(angstr);
+if isempty(angs)
+   errordlg('Angle Threshold must be numbers! Input again!', 'Error'); 
+   return
+end
+handles.param.angthresholds = angs(:)';
+updata_log(hObject, handles, ['Angle Threshold selected: ' mat2str(handles.param.angthresholds)]);
+
+
+function pbout_Callback(hObject, eventdata, handles)
+dpOut = uigetdir;
+set(handles.etin, 'String', dpOut);
+
+
+function pbin_Callback(hObject, eventdata, handles)
+dpIn = uigetdir;
+set(handles.etin, 'String', dpIn);
+
+
+function pbtrack_Callback(hObject, eventdata, handles)
+
+
+function pbreset_Callback(hObject, eventdata, handles)
+initialize_gui(gcbf, handles);
+
+%%%% utility %%%%
+function initialize_gui(fig_handle, handles)
+
+handles.param.outdir = '';
+handles.param.indir = '';
+handles.param.datadir = '';
+handles.param.bmaskdir = '';
+handles.param.smaskdir = '';
+
+handles.param.dogsigmas = [];
+handles.param.gausigmas = [];
+handles.param.angthresholds = [];
+handles.log = '';
+
+set(handles.etout, 'String', '');
+set(handles.etin, 'String', '');
+set(handles.etdog, 'String', '');
+set(handles.etgau, 'String', '');
+set(handles.etang, 'String', '');
+set(handles.stlog, 'String', handles.log);
+
+guidata(handles.figure1, handles);
+
+root = fileparts(mfilename('fullpath'));
+addpath(genpath(root));
+
+function updata_log(fig_handle, handles, str)
+handles.log = [str char(10) handles.log];
+set(handles.stlog, 'String', handles.log);
+guidata(handles.figure1, handles);
