@@ -26,8 +26,8 @@ end
 
 function ctt_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
+handles = initialize_gui(hObject, handles);
 guidata(hObject, handles);
-initialize_gui(hObject, handles);
 
 function varargout = ctt_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
@@ -75,6 +75,8 @@ end
 handles.param.outdir = dpOut;
 updata_log(hObject, handles, ['Output directory selected: ' dpOut])
 
+guidata(handles.figure1, handles);
+
 
 function etin_Callback(hObject, eventdata, handles)
 dpIn = get(hObject, 'String');
@@ -84,6 +86,8 @@ if ~exist(dpIn, 'dir')
 end
 handles.param.indir = dpIn;
 updata_log(hObject, handles, ['Input directory selected: ' dpIn])
+
+guidata(handles.figure1, handles);
 
 
 function etdog_Callback(hObject, eventdata, handles)
@@ -96,6 +100,8 @@ end
 handles.param.dogsigmas = sigs(:)';
 updata_log(hObject, handles, ['DoG Sigma selected: ' mat2str(handles.param.dogsigmas)]);
 
+guidata(handles.figure1, handles);
+
 
 function etgau_Callback(hObject, eventdata, handles)
 sigstr = get(hObject, 'String');
@@ -106,6 +112,8 @@ if isempty(sigs)
 end
 handles.param.gausigmas = sigs(:)';
 updata_log(hObject, handles, ['Gau Sigma selected: ' mat2str(handles.param.gausigmas)]);
+
+guidata(handles.figure1, handles);
 
 
 function etang_Callback(hObject, eventdata, handles)
@@ -118,29 +126,63 @@ end
 handles.param.angthresholds = angs(:)';
 updata_log(hObject, handles, ['Angle Threshold selected: ' mat2str(handles.param.angthresholds)]);
 
+guidata(handles.figure1, handles);
+
 
 function pbout_Callback(hObject, eventdata, handles)
 dpOut = uigetdir;
 if dpOut == 0, return, end
 set(handles.etout, 'String', dpOut);
+handles.param.outdir = dpOut;
 updata_log(hObject, handles, ['Output directory selected: ' dpOut])
+
+guidata(handles.figure1, handles);
 
 
 function pbin_Callback(hObject, eventdata, handles)
 dpIn = uigetdir;
 if dpIn == 0, return, end
 set(handles.etin, 'String', dpIn);
-updata_log(hObject, handles, ['Input directory selected: ' dpIn])
+handles.param.indir = dpIn;
+handles = updata_log(hObject, handles, ['Input directory selected: ' dpIn]);
+
+guidata(handles.figure1, handles);
+
+
+function pbreset_Callback(hObject, eventdata, handles)
+handles = initialize_gui(gcbf, handles);
+
+guidata(handles.figure1, handles);
+
+function pbconvert_Callback(hObject, eventdata, handles)
+dpIn = handles.param.indir;
+if isempty(dpIn), errordlg('Input directory does not exist! Check please!', 'Error'), return, end
+
+dirname = listdir(fullfile(dpIn, 'data*'));
+if isempty(dirname), errordlg('Data directory does not exist! Check please!', 'Error'), return, end
+if length(dirname) > 1, errordlg('Multiple data directories exist! Check please!', 'Error'), return, end
+handles.param.datadir = fullfile(dpIn, dirname{1});
+handles = updata_log(hObject, handles, ['Data directory selected: ' handles.param.datadir]);
+
+dirname = listdir(fullfile(dpIn, 'mask-brain*'));
+if isempty(dirname), errordlg('Brain mask directory does not exist! Check please!', 'Error'), return, end
+if length(dirname) > 1, errordlg('Multiple brain mask directories exist! Check please!', 'Error'), return, end
+handles.param.bmaskdir = fullfile(dpIn, dirname{1});
+handles = updata_log(hObject, handles, ['Brain mask directory selected: ' handles.param.bmaskdir]);
+
+dirname = listdir(fullfile(dpIn, 'mask-seed*'));
+if isempty(dirname), errordlg('Seed mask directory does not exist! Check please!', 'Error'), return, end
+if length(dirname) > 1, errordlg('Multiple seed mask directories exist! Check please!', 'Error'), return, end
+handles.param.smaskdir = fullfile(dpIn, dirname{1});
+handles = updata_log(hObject, handles, ['Seed mask directory selected: ' handles.param.smaskdir]);
+
+guidata(handles.figure1, handles);
 
 
 function pbtrack_Callback(hObject, eventdata, handles)
 
-
-function pbreset_Callback(hObject, eventdata, handles)
-initialize_gui(gcbf, handles);
-
 %%%% utility %%%%
-function initialize_gui(fig_handle, handles)
+function handles = initialize_gui(fig_handle, handles)
 
 handles.param.outdir = '';
 handles.param.indir = '';
@@ -160,12 +202,9 @@ set(handles.etgau, 'String', '');
 set(handles.etang, 'String', '');
 set(handles.stlog, 'String', handles.log);
 
-guidata(handles.figure1, handles);
-
 root = fileparts(mfilename('fullpath'));
 addpath(genpath(root));
 
-function updata_log(fig_handle, handles, str)
+function handles = updata_log(fig_handle, handles, str)
 handles.log = [str char(10) handles.log];
 set(handles.stlog, 'String', handles.log);
-guidata(handles.figure1, handles);
