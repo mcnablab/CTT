@@ -134,7 +134,7 @@ dpOut = uigetdir;
 if dpOut == 0, return, end
 set(handles.etout, 'String', dpOut);
 handles.param.outdir = dpOut;
-updata_log(hObject, handles, ['Output directory selected: ' dpOut])
+updata_log(hObject, handles, ['Output directory selected: ' dpOut]);
 
 guidata(handles.figure1, handles);
 
@@ -156,25 +156,61 @@ guidata(handles.figure1, handles);
 
 function pbconvert_Callback(hObject, eventdata, handles)
 dpIn = handles.param.indir;
-if isempty(dpIn), errordlg('Input directory does not exist! Check please!', 'Error'), return, end
+if isempty(dpIn), errordlg('Input directory does not exist! Enter please!', 'Error'), return, end
+
+dpOut = handles.param.outdir;
+if isempty(dpOut), errordlg('Output directory does not exist! Enter please!', 'Error'), return, end
 
 dirname = listdir(fullfile(dpIn, 'data*'));
 if isempty(dirname), errordlg('Data directory does not exist! Check please!', 'Error'), return, end
 if length(dirname) > 1, errordlg('Multiple data directories exist! Check please!', 'Error'), return, end
-handles.param.datadir = fullfile(dpIn, dirname{1});
+handles.param.datadir = dirname{1};
 handles = updata_log(hObject, handles, ['Data directory selected: ' handles.param.datadir]);
 
 dirname = listdir(fullfile(dpIn, 'mask-brain*'));
 if isempty(dirname), errordlg('Brain mask directory does not exist! Check please!', 'Error'), return, end
 if length(dirname) > 1, errordlg('Multiple brain mask directories exist! Check please!', 'Error'), return, end
-handles.param.bmaskdir = fullfile(dpIn, dirname{1});
+handles.param.bmaskdir = dirname{1};
 handles = updata_log(hObject, handles, ['Brain mask directory selected: ' handles.param.bmaskdir]);
 
 dirname = listdir(fullfile(dpIn, 'mask-seed*'));
 if isempty(dirname), errordlg('Seed mask directory does not exist! Check please!', 'Error'), return, end
 if length(dirname) > 1, errordlg('Multiple seed mask directories exist! Check please!', 'Error'), return, end
-handles.param.smaskdir = fullfile(dpIn, dirname{1});
+handles.param.smaskdir = dirname{1};
 handles = updata_log(hObject, handles, ['Seed mask directory selected: ' handles.param.smaskdir]);
+
+dirname = listdir(fullfile(dpIn, 'mask-roi*'));
+if isempty(dirname), errordlg('Roi mask directory does not exist! Check please!', 'Error'), return, end
+handles.param.rmaskdir = dirname;
+for ii = 1 : length(dirname)
+    handles = updata_log(hObject, handles, ['Roi mask' num2str(ii) ' directory selected: ' handles.param.rmaskdir{ii}]);
+end
+
+handles = updata_log(hObject, handles, 'Converting data ...');
+data = loadstack(fullfile(dpIn, handles.param.datadir));
+fpData = fullfile(dpOut, [handles.param.datadir '.nii.gz']);
+fpData = writenii(data, fpData);
+handles = updata_log(hObject, handles, 'Converting data is done.');
+
+handles = updata_log(hObject, handles, 'Converting brain mask ...');
+bmask = loadstack(fullfile(dpIn, handles.param.bmaskdir));
+fpBmask = fullfile(dpOut, [handles.param.bmaskdir '.nii.gz']);
+fpBmask = writenii(bmask, fpBmask);
+handles = updata_log(hObject, handles, 'Converting brain mask is done.');
+
+handles = updata_log(hObject, handles, 'Converting seed mask ...');
+smask = loadstack(fullfile(dpIn, handles.param.smaskdir));
+fpSmask = fullfile(dpOut, [handles.param.smaskdir '.nii.gz']);
+fpSmask = writenii(smask, fpSmask);
+handles = updata_log(hObject, handles, 'Converting seed mask is done.');
+
+for ii = 1 : length(handles.param.rmaskdir)
+    handles = updata_log(hObject, handles, ['Converting roi mask' num2str(ii) ' ...']);
+    rmask = loadstack(fullfile(dpIn, handles.param.rmaskdir{ii}));
+    fpRmask = fullfile(dpOut, [handles.param.rmaskdir{ii} '.nii.gz']);
+    fpRmask = writenii(rmask, fpRmask);
+    handles = updata_log(hObject, handles, ['Converting roi mask' num2str(ii) ' is done.']);
+end
 
 guidata(handles.figure1, handles);
 
@@ -189,6 +225,7 @@ handles.param.indir = '';
 handles.param.datadir = '';
 handles.param.bmaskdir = '';
 handles.param.smaskdir = '';
+handles.param.smaskdir = {};
 
 handles.param.dogsigmas = [];
 handles.param.gausigmas = [];
