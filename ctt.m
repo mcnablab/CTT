@@ -73,7 +73,7 @@ if ~exist(dpOut, 'dir')
     end
 end
 handles.param.outdir = dpOut;
-updata_log(hObject, handles, ['Output directory selected: ' dpOut])
+handles = updata_log(hObject, handles, ['Output directory selected: ' dpOut]);
 
 guidata(handles.figure1, handles);
 
@@ -85,7 +85,7 @@ if ~exist(dpIn, 'dir')
     return
 end
 handles.param.indir = dpIn;
-updata_log(hObject, handles, ['Input directory selected: ' dpIn])
+handles = updata_log(hObject, handles, ['Input directory selected: ' dpIn]);
 
 guidata(handles.figure1, handles);
 
@@ -98,7 +98,7 @@ if isempty(sigs)
    return
 end
 handles.param.dogsigmas = sigs(:)';
-updata_log(hObject, handles, ['DoG Sigma selected: ' mat2str(handles.param.dogsigmas)]);
+handles = updata_log(hObject, handles, ['DoG Sigma selected: ' mat2str(handles.param.dogsigmas)]);
 
 guidata(handles.figure1, handles);
 
@@ -111,7 +111,7 @@ if isempty(sigs)
    return
 end
 handles.param.gausigmas = sigs(:)';
-updata_log(hObject, handles, ['Gau Sigma selected: ' mat2str(handles.param.gausigmas)]);
+handles = updata_log(hObject, handles, ['Gau Sigma selected: ' mat2str(handles.param.gausigmas)]);
 
 guidata(handles.figure1, handles);
 
@@ -124,7 +124,7 @@ if isempty(angs)
    return
 end
 handles.param.angthresholds = angs(:)';
-updata_log(hObject, handles, ['Angle Threshold selected: ' mat2str(handles.param.angthresholds)]);
+handles = updata_log(hObject, handles, ['Angle Threshold selected: ' mat2str(handles.param.angthresholds)]);
 
 guidata(handles.figure1, handles);
 
@@ -134,7 +134,7 @@ dpOut = uigetdir;
 if dpOut == 0, return, end
 set(handles.etout, 'String', dpOut);
 handles.param.outdir = dpOut;
-updata_log(hObject, handles, ['Output directory selected: ' dpOut]);
+handles = updata_log(hObject, handles, ['Output directory selected: ' dpOut]);
 
 guidata(handles.figure1, handles);
 
@@ -161,61 +161,57 @@ if isempty(dpIn), errordlg('Input directory does not exist! Enter please!', 'Err
 dpOut = handles.param.outdir;
 if isempty(dpOut), errordlg('Output directory does not exist! Enter please!', 'Error'), return, end
 
-dirname = listdir(fullfile(dpIn, 'data*'));
-if isempty(dirname), errordlg('Data directory does not exist! Check please!', 'Error'), return, end
-if length(dirname) > 1, errordlg('Multiple data directories exist! Check please!', 'Error'), return, end
-handles.param.datadir = dirname{1};
-handles = updata_log(hObject, handles, ['Data directory selected: ' handles.param.datadir]);
-
-dirname = listdir(fullfile(dpIn, 'mask-brain*'));
-if isempty(dirname), errordlg('Brain mask directory does not exist! Check please!', 'Error'), return, end
-if length(dirname) > 1, errordlg('Multiple brain mask directories exist! Check please!', 'Error'), return, end
-handles.param.bmaskdir = dirname{1};
-handles = updata_log(hObject, handles, ['Brain mask directory selected: ' handles.param.bmaskdir]);
-
-dirname = listdir(fullfile(dpIn, 'mask-seed*'));
-if isempty(dirname), errordlg('Seed mask directory does not exist! Check please!', 'Error'), return, end
-if length(dirname) > 1, errordlg('Multiple seed mask directories exist! Check please!', 'Error'), return, end
-handles.param.smaskdir = dirname{1};
-handles = updata_log(hObject, handles, ['Seed mask directory selected: ' handles.param.smaskdir]);
+handles = convert2nii(hObject, handles, 'data', 'datadir');
+handles = convert2nii(hObject, handles, 'mask-brain', 'bmaskdir');
+handles = convert2nii(hObject, handles, 'mask-seed', 'smask');
 
 dirname = listdir(fullfile(dpIn, 'mask-roi*'));
-if isempty(dirname), errordlg('Roi mask directory does not exist! Check please!', 'Error'), return, end
-handles.param.rmaskdir = dirname;
-for ii = 1 : length(dirname)
-    handles = updata_log(hObject, handles, ['Roi mask' num2str(ii) ' directory selected: ' handles.param.rmaskdir{ii}]);
+if ~isempty(dirname)
+    for ii = 1 : length(dirname)
+        handles = convert2nii(hObject, handles, dirname{ii}, 'rmask');
+    end
 end
-
-handles = updata_log(hObject, handles, 'Converting data ...');
-data = loadstack(fullfile(dpIn, handles.param.datadir));
-fpData = fullfile(dpOut, [handles.param.datadir '.nii.gz']);
-fpData = writenii(data, fpData);
-handles = updata_log(hObject, handles, 'Converting data is done.');
-
-handles = updata_log(hObject, handles, 'Converting brain mask ...');
-bmask = loadstack(fullfile(dpIn, handles.param.bmaskdir));
-fpBmask = fullfile(dpOut, [handles.param.bmaskdir '.nii.gz']);
-fpBmask = writenii(bmask, fpBmask);
-handles = updata_log(hObject, handles, 'Converting brain mask is done.');
-
-handles = updata_log(hObject, handles, 'Converting seed mask ...');
-smask = loadstack(fullfile(dpIn, handles.param.smaskdir));
-fpSmask = fullfile(dpOut, [handles.param.smaskdir '.nii.gz']);
-fpSmask = writenii(smask, fpSmask);
-handles = updata_log(hObject, handles, 'Converting seed mask is done.');
-
-for ii = 1 : length(handles.param.rmaskdir)
-    handles = updata_log(hObject, handles, ['Converting roi mask' num2str(ii) ' ...']);
-    rmask = loadstack(fullfile(dpIn, handles.param.rmaskdir{ii}));
-    fpRmask = fullfile(dpOut, [handles.param.rmaskdir{ii} '.nii.gz']);
-    fpRmask = writenii(rmask, fpRmask);
-    handles = updata_log(hObject, handles, ['Converting roi mask' num2str(ii) ' is done.']);
-end
-
 guidata(handles.figure1, handles);
 
-
 function pbtrack_Callback(hObject, eventdata, handles)
+dpIn = handles.param.indir;
+if isempty(dpIn), errordlg('Input directory does not exist! Enter please!', 'Error'), return, end
+
+dpOut = handles.param.outdir;
+if isempty(dpOut), errordlg('Output directory does not exist! Enter please!', 'Error'), return, end
+
+dogsigs = handles.param.dogsigmas;
+if isempty(dogsigs), errordlg('DoG Sigma does not exist! Enter please!', 'Error'), return, end
+
+gausigs = handles.param.gausigmas;
+if isempty(gausigs), errordlg('Gau Sigma directory does not exist! Enter please!', 'Error'), return, end
+
+angs = handles.param.angthresholds;
+if isempty(angs), errordlg('Angle Threshold does not exist! Enter please!', 'Error'), return, end
+
+fpData = fullfile(dpOut, [handles.param.datadir '.nii.gz']);
+if ~exist(fpData, 'file'), handles = convert2nii(hObject, handles, 'data', 'datadir'); end
+
+fpBmask = fullfile(dpOut, [handles.param.bmaskdir '.nii.gz']);
+if ~exist(fpBmask, 'file')
+    handles = convert2nii(hObject, handles, 'mask-brain', 'bmaskdir'); 
+    fpBmask = fullfile(dpOut, [handles.param.bmaskdir '.nii.gz']);
+end
+
+fpSmask = fullfile(dpOut, [handles.param.smaskdir '.nii.gz']);
+if ~exist(fpSmask, 'file')
+    handles = convert2nii(hObject, handles, 'mask-seed', 'smaskdir'); 
+    fpSmask = fullfile(dpOut, [handles.param.smaskdir '.nii.gz']);
+end
+
+handles = updata_log(hObject, handles, 'Tracking starts ...'); pause(1);
+
+stack = single(loadstack(fullfile(dpIn, handles.param.datadir)));
+track(stack, dogsigs, gausigs, angs, fpBmask, fpSmask, dpOut);
+
+handles = updata_log(hObject, handles, 'Tracking completes.');
+
+guidata(handles.figure1, handles);
 
 %%%% utility %%%%
 function handles = initialize_gui(fig_handle, handles)
@@ -225,7 +221,7 @@ handles.param.indir = '';
 handles.param.datadir = '';
 handles.param.bmaskdir = '';
 handles.param.smaskdir = '';
-handles.param.smaskdir = {};
+handles.param.rmaskdir = '';
 
 handles.param.dogsigmas = [];
 handles.param.gausigmas = [];
@@ -245,3 +241,20 @@ addpath(genpath(root));
 function handles = updata_log(fig_handle, handles, str)
 handles.log = [str char(10) handles.log];
 set(handles.stlog, 'String', handles.log);
+
+function handles = convert2nii(fig_handle, handles, name, field)
+dpIn = handles.param.indir;
+dpOut = handles.param.outdir;
+
+dirname = listdir(fullfile(dpIn, [name '*']));
+if isempty(dirname), errordlg([name ' directory does not exist! Check please!'], 'Error'), return, end
+if length(dirname) > 1, errordlg(['Multiple ' name ' directories exist! Check please!'], 'Error'), return, end
+handles.param.(field) = dirname{1};
+handles = updata_log(fig_handle, handles, [name ' directory selected: ' handles.param.(field)]);
+
+handles = updata_log(fig_handle, handles, ['Converting ' name ' to nii ...']);
+stack = loadstack(fullfile(dpIn, handles.param.(field)));
+fpNii = fullfile(dpOut, [handles.param.(field) '.nii.gz']);
+writenii(stack, fpNii);
+handles = updata_log(fig_handle, handles, ['Converting ' name ' to nii is done.']);
+
